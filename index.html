@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilossario — Proposta de Projeto</title>
+  <style>
+    /* ── PASSWORD GATE ── */
+    #auth-gate {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9999;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #2563eb 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    #auth-gate.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .auth-box {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .auth-box .lock-icon { font-size: 48px; margin-bottom: 16px; }
+    .auth-box h2 { color: white; font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .auth-box p { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 28px; }
+    .auth-box input {
+      width: 100%;
+      padding: 14px 18px;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .auth-box input::placeholder { color: rgba(255,255,255,0.3); }
+    .auth-box input:focus { border-color: rgba(255,255,255,0.5); }
+    .auth-box input.error { border-color: #ef4444; animation: shake 0.4s ease; }
+    .auth-box button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      background: white;
+      color: #0f172a;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .auth-box button:hover { opacity: 0.9; }
+    .auth-box button:active { transform: scale(0.98); }
+    .auth-error {
+      color: #fca5a5;
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      50% { transform: translateX(8px); }
+      75% { transform: translateX(-4px); }
+    }
+    #presentation-content { display: none; }
+    :root {
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --accent-light: #3b82f6;
+      --accent-bg: #eff6ff;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --danger: #dc2626;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background: var(--bg-alt);
+      line-height: 1.7;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #2563eb 100%);
+      color: white;
+      padding: 80px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 70%, rgba(59,130,246,0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-20px, -20px); }
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero-icon { font-size: 56px; margin-bottom: 16px; }
+    .hero h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+    .hero h2 { font-size: 22px; font-weight: 400; opacity: 0.85; margin-bottom: 12px; }
+    .hero h3 { font-size: 16px; font-weight: 400; opacity: 0.6; text-transform: uppercase; letter-spacing: 2px; }
+
+    /* ── KPI BAR ── */
+    .kpi-bar {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-top: 48px;
+    }
+    .kpi {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius);
+      padding: 20px 28px;
+      min-width: 180px;
+    }
+    .kpi-value { font-size: 26px; font-weight: 700; }
+    .kpi-label { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 60px 0;
+    }
+    section:nth-child(even) {
+      background: var(--bg);
+    }
+    section:nth-child(odd) {
+      background: var(--bg-alt);
+    }
+
+    .section-number {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 36px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    h2.section-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+      color: var(--text-light);
+      margin-bottom: 32px;
+    }
+
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 32px 0 16px;
+    }
+    h3:first-of-type { margin-top: 0; }
+
+    p { margin-bottom: 16px; color: var(--text); }
+
+    /* ── LISTS ── */
+    ul, ol {
+      margin: 0 0 20px 24px;
+    }
+    li {
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    li strong { color: var(--primary); }
+
+    /* ── TABLES ── */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    thead {
+      background: var(--primary);
+      color: white;
+    }
+    th {
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--accent-bg); }
+    td strong { color: var(--primary); }
+
+    /* ── HIGHLIGHT BOXES ── */
+    .highlight {
+      background: var(--accent-bg);
+      border-left: 4px solid var(--accent);
+      padding: 20px 24px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 24px 0;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .callout {
+      background: var(--success-bg);
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .callout-warning {
+      background: var(--warning-bg);
+      border: 1px solid #fde68a;
+    }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .card-icon { font-size: 32px; margin-bottom: 12px; }
+    .card h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+    .card p { font-size: 14px; color: var(--text-light); margin-bottom: 0; }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 24px 0;
+    }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+    }
+    .flow-number {
+      flex-shrink: 0;
+      width: 40px; height: 40px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .flow-connector {
+      width: 2px;
+      height: 20px;
+      background: var(--accent);
+      margin-left: 19px;
+      opacity: 0.3;
+    }
+    .flow-content h4 { margin: 0 0 4px; font-size: 15px; color: var(--primary); }
+    .flow-content p { margin: 0; font-size: 14px; color: var(--text-light); }
+
+    /* ── AI PIPELINE ── */
+    .pipeline {
+      background: var(--primary);
+      color: white;
+      border-radius: var(--radius);
+      padding: 32px;
+      margin: 24px 0;
+      text-align: center;
+    }
+    .pipeline h4 { font-size: 14px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; }
+    .pipeline-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .pipeline-node {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      min-width: 140px;
+    }
+    .pipeline-node .icon { font-size: 28px; margin-bottom: 8px; }
+    .pipeline-node .label { font-size: 13px; font-weight: 600; }
+    .pipeline-node .sub { font-size: 11px; opacity: 0.6; margin-top: 4px; }
+    .pipeline-arrow { font-size: 24px; opacity: 0.4; }
+
+    /* ── COMPARISON ── */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin: 24px 0;
+    }
+    .comparison-col { padding: 24px; }
+    .comparison-col:first-child { background: var(--bg-alt); }
+    .comparison-col:last-child { background: var(--accent-bg); }
+    .comparison-col h4 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--text-light); }
+    .check-item { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; }
+    .check { color: var(--success); font-weight: 700; }
+    .cross { color: var(--danger); font-weight: 700; }
+
+    /* ── TIMELINE ── */
+    .timeline {
+      position: relative;
+      margin: 32px 0;
+      padding-left: 32px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 14px; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, var(--accent), #a78bfa);
+      border-radius: 2px;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -25px; top: 4px;
+      width: 14px; height: 14px;
+      background: var(--accent);
+      border: 3px solid var(--bg-alt);
+      border-radius: 50%;
+    }
+    .timeline-phase {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .timeline-title { font-size: 16px; font-weight: 600; color: var(--primary); margin: 4px 0; }
+    .timeline-meta { font-size: 13px; color: var(--text-light); }
+    .timeline-hours {
+      display: inline-block;
+      background: var(--accent-bg);
+      color: var(--accent);
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    /* ── GAUGE / SCORE ── */
+    .gauge-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 24px 0;
+    }
+    .gauge {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 12px;
+    }
+    .gauge-label { font-size: 12px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+    .gauge-value { font-size: 28px; font-weight: 700; color: var(--accent); margin: 8px 0 4px; }
+    .gauge-sub { font-size: 11px; color: var(--text-light); }
+
+    /* ── ADVANTAGES ── */
+    .advantage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .advantage {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+    .advantage-number {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      line-height: 28px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .advantage p { font-size: 14px; margin: 0; color: var(--text); }
+    .advantage strong { color: var(--primary); }
+
+    /* ── DECISION BOX ── */
+    .decision-box {
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      color: white;
+      border-radius: var(--radius);
+      padding: 40px;
+      margin: 32px 0;
+    }
+    .decision-box h3 { color: white; margin-top: 0; }
+    .decision-box p { color: rgba(255,255,255,0.8); }
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .decision-item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .decision-item .label { font-size: 12px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
+    .decision-item .value { font-size: 16px; font-weight: 700; margin-top: 4px; }
+    .decision-item .badge {
+      display: inline-block;
+      background: rgba(34,197,94,0.2);
+      color: #4ade80;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--primary);
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 32px;
+      font-size: 14px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .hero { padding: 48px 24px; }
+      .hero h1 { font-size: 32px; }
+      .hero h2 { font-size: 18px; }
+      .kpi-bar { gap: 12px; }
+      .kpi { min-width: 140px; padding: 14px 18px; }
+      .kpi-value { font-size: 20px; }
+      h2.section-title { font-size: 24px; }
+      .comparison { grid-template-columns: 1fr; }
+      .pipeline-flow { flex-direction: column; }
+      .pipeline-arrow { transform: rotate(90deg); }
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      .hero { padding: 40px 20px; }
+      section { padding: 30px 0; break-inside: avoid; }
+      .card:hover { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════ PASSWORD GATE ═══════════ -->
+  <div id="auth-gate">
+    <div class="auth-box">
+      <div class="lock-icon">&#128274;</div>
+      <h2>Acesso Restrito</h2>
+      <p>Documento confidencial — insira a senha para continuar</p>
+      <input type="password" id="password-input" placeholder="Digite a senha" autocomplete="off" autofocus>
+      <button id="auth-submit">Acessar Documento</button>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PRESENTATION CONTENT (hidden until authenticated) ═══════════ -->
+  <div id="presentation-content">
+
+  <!-- ═══════════ HERO ═══════════ -->
+  <header class="hero">
+    <div class="hero-icon">&#9992;</div>
+    <h1>Pilossario</h1>
+    <h2>Plataforma de Preparacao para Selecao em Aviacao</h2>
+    <h3>Proposta de Projeto para Analise e Aprovacao</h3>
+    <div class="kpi-bar">
+      <div class="kpi">
+        <div class="kpi-value">280h</div>
+        <div class="kpi-label">Horas de desenvolvimento</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">11 sem</div>
+        <div class="kpi-label">Tempo ate o lancamento</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">85-90%</div>
+        <div class="kpi-label">Margem bruta</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">R$ 10k+</div>
+        <div class="kpi-label">Potencial mensal (ano 1)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════ RESUMO EXECUTIVO ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">0</div>
+      <h2 class="section-title">Resumo Executivo</h2>
+      <p class="section-subtitle">Visao geral do projeto e numeros-chave</p>
+
+      <p>O Pilossario e uma plataforma digital que utiliza <strong>inteligencia artificial</strong> para ajudar profissionais da aviacao a se prepararem para processos seletivos, especificamente entrevistas em ingles para vagas de comissarios de bordo em companhias aereas internacionais.</p>
+
+      <p>O produto principal e um <strong>simulador de entrevista por voz com IA</strong> que replica processos seletivos reais, proporcionando aos candidatos pratica e avaliacao detalhada de desempenho.</p>
+
+      <div class="gauge-row">
+        <div class="gauge">
+          <div class="gauge-label">Investimento</div>
+          <div class="gauge-value">~280h</div>
+          <div class="gauge-sub">de desenvolvimento</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Custo mensal</div>
+          <div class="gauge-value">R$ 300</div>
+          <div class="gauge-sub">no lancamento</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Receita potencial</div>
+          <div class="gauge-value">R$ 10k+</div>
+          <div class="gauge-sub">por mes no ano 1</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Margem bruta</div>
+          <div class="gauge-value">85-90%</div>
+          <div class="gauge-sub">por entrevista</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 1. O PROBLEMA ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">1</div>
+      <h2 class="section-title">O Problema</h2>
+      <p class="section-subtitle">A lacuna do mercado que o Pilossario resolve</p>
+
+      <p>Processos seletivos na aviacao — especialmente em companhias aereas internacionais — exigem fortes habilidades de comunicacao em ingles. Os candidatos sao avaliados em pronuncia, fluencia, compreensao e capacidade de interagir naturalmente sob pressao.</p>
+
+      <h3>O que os candidatos enfrentam hoje</h3>
+      <ul>
+        <li><strong>Nao existem ferramentas estruturadas</strong> especificas para entrevistas de ingles na aviacao</li>
+        <li>Cursos genericos de idiomas <strong>nao simulam a pressao real</strong> de uma entrevista</li>
+        <li>Coaching particular e caro (<strong>R$ 200-500/hora</strong>) e de dificil acesso</li>
+        <li>Candidatos frequentemente reprovam por <strong>falta de preparacao para o formato</strong></li>
+        <li>Apresentacoes em video sao cada vez mais exigidas, sem formas de praticar com feedback</li>
+      </ul>
+
+      <h3>Alternativas atuais</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Opcao</th><th>Preco</th><th>Limitacoes</th></tr></thead>
+          <tbody>
+            <tr><td>Coaching particular de ingles</td><td>R$ 200-500/hora</td><td>Caro, nao e especifico para aviacao</td></tr>
+            <tr><td>Apps genericos de preparacao</td><td>R$ 0-50/mes</td><td>Sem interacao por voz, sem foco em aviacao</td></tr>
+            <tr><td>YouTube / recursos gratuitos</td><td>Gratis</td><td>Sem interacao, sem feedback personalizado</td></tr>
+            <tr><td>Simulacoes com amigos</td><td>Gratis</td><td>Sem avaliacao profissional, inconsistente</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="highlight">
+        Nao existe nenhum produto que combine IA, interacao por voz, expertise em aviacao e avaliacao estruturada.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 2. A SOLUCAO ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">2</div>
+      <h2 class="section-title">A Solucao</h2>
+      <p class="section-subtitle">Como o Pilossario funciona</p>
+
+      <h3>Jornada do usuario</h3>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-number">1</div>
+          <div class="flow-content">
+            <h4>Compra creditos de simulacao</h4>
+            <p>Pagamento online via Stripe a partir de R$ 29,90</p>
+          </div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step">
+          <div class="flow-number">2</div>
+          <div class="flow-content">
+            <h4>Inicia a entrevista por voz</h4>
+            <p>Fala naturalmente usando o microfone — a IA ouve e responde em tempo real</p>
+          </div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step">
+          <div class="flow-number">3</div>
+          <div class="flow-content">
+            <h4>Completa 5 partes da entrevista (12-15 min)</h4>
+            <p>Aquecimento, experiencia profissional, comunicacao com passageiros, situacoes a bordo, anuncio de cabine</p>
+          </div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step">
+          <div class="flow-number">4</div>
+          <div class="flow-content">
+            <h4>Recebe avaliacao detalhada</h4>
+            <p>6 criterios avaliados de 1 a 6, pontos fortes, areas de melhoria e recomendacoes</p>
+          </div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-step">
+          <div class="flow-number">5</div>
+          <div class="flow-content">
+            <h4>Baixa relatorio em PDF</h4>
+            <p>Documento completo para acompanhar evolucao ao longo do tempo</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Pilossario vs Concorrentes</h3>
+      <div class="comparison">
+        <div class="comparison-col">
+          <h4>Concorrentes</h4>
+          <div class="check-item"><span class="cross">&#10007;</span> Apenas texto ou pre-gravado</div>
+          <div class="check-item"><span class="cross">&#10007;</span> Preparacao generica</div>
+          <div class="check-item"><span class="cross">&#10007;</span> Sem avaliacao ICAO</div>
+          <div class="check-item"><span class="cross">&#10007;</span> Assincrono, no maximo</div>
+          <div class="check-item"><span class="cross">&#10007;</span> Aprovado/reprovado basico</div>
+          <div class="check-item"><span class="cross">&#10007;</span> R$ 200-500/hora</div>
+          <div class="check-item"><span class="cross">&#10007;</span> Necessita agendamento</div>
+        </div>
+        <div class="comparison-col">
+          <h4>Pilossario</h4>
+          <div class="check-item"><span class="check">&#10003;</span> Conversa por voz com IA</div>
+          <div class="check-item"><span class="check">&#10003;</span> Cenarios de aviacao</div>
+          <div class="check-item"><span class="check">&#10003;</span> Avaliacao alinhada a ICAO</div>
+          <div class="check-item"><span class="check">&#10003;</span> Interacao em tempo real</div>
+          <div class="check-item"><span class="check">&#10003;</span> 6 criterios detalhados (1-6)</div>
+          <div class="check-item"><span class="check">&#10003;</span> R$ 29,90 por sessao</div>
+          <div class="check-item"><span class="check">&#10003;</span> Disponivel 24/7</div>
+        </div>
+      </div>
+
+      <h3>Estrutura da entrevista</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Parte</th><th>O que avalia</th><th>Exemplo</th></tr></thead>
+          <tbody>
+            <tr><td><strong>1. Aquecimento</strong></td><td>Apresentacao pessoal, motivacao</td><td>"What motivated you to work in aviation?"</td></tr>
+            <tr><td><strong>2. Experiencia Profissional</strong></td><td>Narrativa de carreira, metodo STAR</td><td>"Describe a challenge you faced at work."</td></tr>
+            <tr><td><strong>3. Comunicacao com Passageiros</strong></td><td>Empatia, resolucao de conflitos</td><td>"A passenger is nervous due to turbulence..."</td></tr>
+            <tr><td><strong>4. Situacoes a Bordo</strong></td><td>Resolucao de problemas, seguranca</td><td>"A passenger feels unwell during the flight..."</td></tr>
+            <tr><td><strong>5. Anuncio de Cabine</strong></td><td>Pronuncia, clareza, confianca</td><td>Leitura de anuncio padrao de bordo</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Criterios de avaliacao (ICAO, nota 1-6)</h3>
+      <div class="card-grid">
+        <div class="card"><div class="card-icon">&#128483;</div><h4>Pronuncia</h4><p>Clareza, padroes de entonacao, acentuacao</p></div>
+        <div class="card"><div class="card-icon">&#128221;</div><h4>Estrutura</h4><p>Precisao gramatical, construcao de frases</p></div>
+        <div class="card"><div class="card-icon">&#128218;</div><h4>Vocabulario</h4><p>Amplitude, precisao, terminologia aeronautica</p></div>
+        <div class="card"><div class="card-icon">&#127897;</div><h4>Fluencia</h4><p>Fluidez da fala, ritmo, naturalidade</p></div>
+        <div class="card"><div class="card-icon">&#128065;</div><h4>Compreensao</h4><p>Entendimento das perguntas e contexto</p></div>
+        <div class="card"><div class="card-icon">&#128101;</div><h4>Interacao</h4><p>Engajamento, alternancia, capacidade de elaborar</p></div>
+      </div>
+
+      <p><strong>Nivel final = menor nota entre todos os criterios</strong> (seguindo padroes internacionais de aviacao).</p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 3. MERCADO ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">3</div>
+      <h2 class="section-title">Mercado-Alvo</h2>
+      <p class="section-subtitle">Quem sao os usuarios e por que vao pagar</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Segmento</th><th>Estimativa (Brasil)</th><th>Nivel de dor</th></tr></thead>
+          <tbody>
+            <tr><td>Candidatos a comissario de bordo (novos)</td><td>~50.000/ano</td><td><strong style="color:#dc2626">Muito alto</strong></td></tr>
+            <tr><td>Tripulantes buscando oportunidades internacionais</td><td>~30.000</td><td><strong style="color:#d97706">Alto</strong></td></tr>
+            <tr><td>Tripulantes em avaliacoes internas de idioma</td><td>~20.000</td><td><strong style="color:#d97706">Medio-alto</strong></td></tr>
+            <tr><td>Profissionais em transicao de carreira</td><td>~10.000</td><td><strong>Medio</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="highlight">
+        Mercado enderecavel total no Brasil: ~110.000 profissionais/ano
+      </div>
+
+      <h3>Por que vao pagar</h3>
+      <ul>
+        <li>Preparacao para entrevistas e de <strong>alto risco</strong> — uma oportunidade pode mudar uma carreira</li>
+        <li>R$ 29,90 por simulacao e <strong>10-20x mais barato</strong> que coaching</li>
+        <li>Candidatos precisam de <strong>3-10 sessoes</strong> de pratica antes de se sentirem prontos</li>
+        <li>Acessivel de <strong>qualquer lugar, a qualquer hora</strong></li>
+      </ul>
+
+      <h3>Expansao geografica</h3>
+      <div class="card-grid">
+        <div class="card"><div class="card-icon">&#127463;&#127479;</div><h4>America Latina</h4><p>Mesmos desafios em toda a regiao (espanhol + ingles)</p></div>
+        <div class="card"><div class="card-icon">&#127757;</div><h4>Oriente Medio / Asia</h4><p>Grandes hubs com alta demanda por tripulacao fluente em ingles</p></div>
+        <div class="card"><div class="card-icon">&#127466;&#127482;</div><h4>Europa</h4><p>Crescimento de companhias low-cost impulsionando recrutamento</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 4. MODELO DE NEGOCIO ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">4</div>
+      <h2 class="section-title">Modelo de Negocio</h2>
+      <p class="section-subtitle">Receita, custos e projecoes</p>
+
+      <h3>Pacotes de creditos</h3>
+      <div class="card-grid">
+        <div class="card" style="text-align:center; border-color: var(--border);">
+          <h4>Avulso</h4>
+          <div style="font-size:32px; font-weight:700; color:var(--accent); margin:12px 0;">R$ 29,90</div>
+          <p>1 simulacao</p>
+        </div>
+        <div class="card" style="text-align:center; border-color: var(--accent);">
+          <h4>Triplo</h4>
+          <div style="font-size:32px; font-weight:700; color:var(--accent); margin:12px 0;">R$ 74,90</div>
+          <p>3 simulacoes (R$ 24,97 cada)</p>
+        </div>
+        <div class="card" style="text-align:center; border-color: var(--accent);">
+          <h4>Pacote Cinco</h4>
+          <div style="font-size:32px; font-weight:700; color:var(--accent); margin:12px 0;">R$ 119,90</div>
+          <p>5 simulacoes (R$ 23,98 cada)</p>
+        </div>
+      </div>
+
+      <h3>Economia unitaria</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Item</th><th>Valor</th></tr></thead>
+          <tbody>
+            <tr><td>Receita por entrevista</td><td>R$ 24-30</td></tr>
+            <tr><td>Custo de IA (Claude + TTS)</td><td>~R$ 1,50</td></tr>
+            <tr><td>Custo de infraestrutura</td><td>~R$ 0,50</td></tr>
+            <tr><td><strong>Lucro bruto por entrevista</strong></td><td><strong style="color:var(--success)">~R$ 22-28 (margem de 85-90%)</strong></td></tr>
+            <tr><td>Taxa Stripe</td><td>~R$ 1,30 (3%)</td></tr>
+            <tr><td><strong>Lucro liquido por entrevista</strong></td><td><strong style="color:var(--success)">~R$ 21-27</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Projecoes de receita</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Cenario</th><th>Entrevistas/mes</th><th>Receita mensal</th><th>Custos</th><th>Lucro</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Conservador</strong> (lancamento)</td><td>50</td><td>R$ 1.495</td><td>R$ 400</td><td style="color:var(--success); font-weight:700">R$ 1.095</td></tr>
+            <tr><td><strong>Moderado</strong> (6 meses)</td><td>200</td><td>R$ 5.980</td><td>R$ 600</td><td style="color:var(--success); font-weight:700">R$ 5.380</td></tr>
+            <tr><td><strong>Crescimento</strong> (12 meses)</td><td>500</td><td>R$ 14.950</td><td>R$ 1.000</td><td style="color:var(--success); font-weight:700">R$ 13.950</td></tr>
+            <tr><td><strong>Escala</strong> (24 meses)</td><td>2.000</td><td>R$ 59.800</td><td>R$ 3.000</td><td style="color:var(--success); font-weight:700">R$ 56.800</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fontes de receita futuras (Fase 2)</h3>
+      <ul>
+        <li>Avaliacao de curriculo: <strong>R$ 19,90/analise</strong></li>
+        <li>Analise de apresentacao em video: <strong>R$ 39,90/avaliacao</strong></li>
+        <li>Assinatura mensal (ilimitado): <strong>R$ 149,90/mes</strong></li>
+        <li>Parcerias corporativas com companhias aereas</li>
+        <li>White-label para escolas de aviacao</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══════════ 5. TECNOLOGIA ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">5</div>
+      <h2 class="section-title">O Que e Necessario Para Construir</h2>
+      <p class="section-subtitle">Tecnologia simplificada e cronograma</p>
+
+      <h3>Como a IA funciona</h3>
+      <div class="pipeline">
+        <h4>Pipeline de Inteligencia Artificial</h4>
+        <div class="pipeline-flow">
+          <div class="pipeline-node">
+            <div class="icon">&#127908;</div>
+            <div class="label">Candidato fala</div>
+            <div class="sub">Microfone</div>
+          </div>
+          <div class="pipeline-arrow">&#10230;</div>
+          <div class="pipeline-node">
+            <div class="icon">&#128483;</div>
+            <div class="label">Whisper</div>
+            <div class="sub">Voz &rarr; Texto</div>
+          </div>
+          <div class="pipeline-arrow">&#10230;</div>
+          <div class="pipeline-node">
+            <div class="icon">&#129504;</div>
+            <div class="label">Claude (IA)</div>
+            <div class="sub">Gera resposta</div>
+          </div>
+          <div class="pipeline-arrow">&#10230;</div>
+          <div class="pipeline-node">
+            <div class="icon">&#128264;</div>
+            <div class="label">ElevenLabs</div>
+            <div class="sub">Texto &rarr; Voz</div>
+          </div>
+          <div class="pipeline-arrow">&#10230;</div>
+          <div class="pipeline-node">
+            <div class="icon">&#127911;</div>
+            <div class="label">Candidato ouve</div>
+            <div class="sub">Resposta natural</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-icon">&#129504;</div>
+          <h4>Claude (Anthropic)</h4>
+          <p>O "cerebro" da IA que conduz a entrevista e avalia o desempenho</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#128483;</div>
+          <h4>Whisper (auto-hospedado)</h4>
+          <p>Converte a voz do candidato em texto. Sem custo por chamada.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#128264;</div>
+          <h4>ElevenLabs</h4>
+          <p>Converte as respostas da IA em fala natural e profissional</p>
+        </div>
+      </div>
+
+      <h3>Plataformas entregues</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Plataforma</th><th>Tecnologia</th><th>Cobertura</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Aplicacao Web</strong></td><td>Next.js</td><td>Desktop + navegadores mobile</td></tr>
+            <tr><td><strong>App iOS</strong></td><td>React Native + Expo</td><td>iPhone / iPad</td></tr>
+            <tr><td><strong>App Android</strong></td><td>React Native + Expo</td><td>Celulares / tablets Android</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>As tres plataformas compartilham o mesmo backend e infraestrutura de IA.</p>
+
+      <h3>Cronograma de desenvolvimento</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 0 — Semana 1</div>
+          <div class="timeline-title">Configuracao do projeto + infraestrutura <span class="timeline-hours">16h</span></div>
+          <div class="timeline-meta">Monorepo, banco de dados, containers Docker, banco de perguntas</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 1 — Semana 2</div>
+          <div class="timeline-title">Contas de usuario + autenticacao <span class="timeline-hours">20h</span></div>
+          <div class="timeline-meta">Registro, login, JWT, seguranca</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 2 — Semana 2-3</div>
+          <div class="timeline-title">Integracao de IA (Claude, Whisper, TTS) <span class="timeline-hours">30h</span></div>
+          <div class="timeline-meta">Motor de conversacao, reconhecimento de voz, sintese de fala</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 3 — Semana 3-4</div>
+          <div class="timeline-title">Simulador de entrevista (voz + tempo real) <span class="timeline-hours">40h</span></div>
+          <div class="timeline-meta">WebSocket, maquina de estados, pipeline de audio completo</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 4 — Semana 4</div>
+          <div class="timeline-title">Sistema de pagamento (Stripe) <span class="timeline-hours">16h</span></div>
+          <div class="timeline-meta">Checkout, webhooks, gestao de creditos</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 5 — Semana 4-5</div>
+          <div class="timeline-title">Relatorios + geracao de PDF <span class="timeline-hours">16h</span></div>
+          <div class="timeline-meta">Relatorio de avaliacao, grafico radar, exportacao PDF</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 6 — Semana 5-7</div>
+          <div class="timeline-title">Aplicacao web (frontend) <span class="timeline-hours">60h</span></div>
+          <div class="timeline-meta">Interface completa: login, dashboard, entrevista, relatorios, creditos</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 7 — Semana 8-10</div>
+          <div class="timeline-title">Apps mobile (iOS + Android) <span class="timeline-hours">50h</span></div>
+          <div class="timeline-meta">React Native, gravacao de audio, pagamentos mobile</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-phase">Fase 8 — Semana 10-11</div>
+          <div class="timeline-title">Polimento + lancamento <span class="timeline-hours">32h</span></div>
+          <div class="timeline-meta">Monitoramento, analytics, landing page, deploy em producao</div>
+        </div>
+      </div>
+
+      <h3>Marcos de entrega</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Marco</th><th>Quando</th><th>O que pode ser demonstrado</th></tr></thead>
+          <tbody>
+            <tr><td><strong>MVP do Backend</strong></td><td>Semana 5</td><td>Fluxo completo de entrevista funcionando</td></tr>
+            <tr><td><strong>App Web</strong></td><td>Semana 7</td><td>Usuarios podem cadastrar, pagar, entrevistar e ver relatorios</td></tr>
+            <tr><td><strong>Apps Mobile</strong></td><td>Semana 10</td><td>iOS + Android em fase de teste</td></tr>
+            <tr><td><strong>Lancamento Publico</strong></td><td>Semana 11</td><td>Plataforma pronta para producao</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 6. INVESTIMENTO ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">6</div>
+      <h2 class="section-title">Investimento Necessario</h2>
+      <p class="section-subtitle">Custos de desenvolvimento e operacao</p>
+
+      <h3>Horas de desenvolvimento</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Item</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Desenvolvimento backend</td><td><strong>138h</strong></td><td>API, integracao de IA, pagamentos, relatorios</td></tr>
+            <tr><td>Desenvolvimento frontend (web)</td><td><strong>60h</strong></td><td>Aplicacao web em Next.js</td></tr>
+            <tr><td>Desenvolvimento mobile</td><td><strong>50h</strong></td><td>React Native para iOS + Android</td></tr>
+            <tr><td>Polimento + lancamento</td><td><strong>32h</strong></td><td>Monitoramento, analytics, juridico, deploy</td></tr>
+            <tr style="background:var(--accent-bg)"><td><strong>Total</strong></td><td><strong>280h</strong></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Custos pre-lancamento (unica vez)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Item</th><th>Custo</th></tr></thead>
+          <tbody>
+            <tr><td>Nome de dominio</td><td>~R$ 40/ano</td></tr>
+            <tr><td>Conta Apple Developer</td><td>~R$ 500/ano ($99 USD)</td></tr>
+            <tr><td>Google Play Console</td><td>~R$ 125 unica vez ($25 USD)</td></tr>
+            <tr style="background:var(--accent-bg)"><td><strong>Total</strong></td><td><strong>~R$ 665</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Custos operacionais mensais</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Servico</th><th>Finalidade</th><th>Custo</th></tr></thead>
+          <tbody>
+            <tr><td>Servidor (VPS)</td><td>Hospedar aplicacao + IA</td><td>R$ 100-250/mes</td></tr>
+            <tr><td>Banco de dados</td><td>Armazenar dados</td><td>R$ 0-125/mes</td></tr>
+            <tr><td>Claude API</td><td>Conversacao com IA</td><td>~R$ 0,75/entrevista</td></tr>
+            <tr><td>ElevenLabs</td><td>Sintese de voz</td><td>~R$ 0,75/entrevista</td></tr>
+            <tr><td>Stripe</td><td>Processamento de pagamentos</td><td>3% da receita</td></tr>
+            <tr><td>Monitoramento</td><td>Erros + analytics</td><td>R$ 0 (gratuito)</td></tr>
+            <tr style="background:var(--accent-bg)"><td><strong>Total fixo</strong></td><td></td><td><strong>~R$ 200-400/mes</strong></td></tr>
+            <tr style="background:var(--accent-bg)"><td><strong>Total variavel</strong></td><td>Por entrevista</td><td><strong>~R$ 1,50</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 7. RISCOS ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">7</div>
+      <h2 class="section-title">Analise de Riscos</h2>
+      <p class="section-subtitle">Riscos identificados e estrategias de mitigacao</p>
+
+      <h3>Riscos tecnicos</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Risco</th><th>Probabilidade</th><th>Impacto</th><th>Mitigacao</th></tr></thead>
+          <tbody>
+            <tr><td>Latencia de audio alta (&gt;5s)</td><td>Media</td><td><strong style="color:var(--danger)">Alto</strong></td><td>Modelos rapidos, pipeline otimizado, push-to-talk</td></tr>
+            <tr><td>Avaliacoes inconsistentes da IA</td><td>Baixa</td><td><strong style="color:var(--warning)">Medio</strong></td><td>Prompts estruturados, rubrica rigorosa, calibracao</td></tr>
+            <tr><td>Erros de transcricao</td><td>Baixa</td><td><strong style="color:var(--warning)">Medio</strong></td><td>Modo ingles forcado, filtragem de ruido</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Riscos de negocio</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Risco</th><th>Probabilidade</th><th>Impacto</th><th>Mitigacao</th></tr></thead>
+          <tbody>
+            <tr><td>Baixa adesao inicial</td><td>Media</td><td><strong style="color:var(--warning)">Medio</strong></td><td>Marketing em comunidades de aviacao, parcerias</td></tr>
+            <tr><td>Sensibilidade ao preco</td><td>Baixa</td><td><strong style="color:var(--warning)">Medio</strong></td><td>Preco acessivel (R$ 29,90), descontos introdutorios</td></tr>
+            <tr><td>Concorrencia</td><td>Media</td><td><strong style="color:var(--warning)">Medio</strong></td><td>Vantagem de primeiro entrante, melhoria continua</td></tr>
+            <tr><td>Regulacao de IA</td><td>Baixa</td><td><strong style="color:var(--danger)">Alto</strong></td><td>Conformidade LGPD, transparencia no uso de IA</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Estrategia de mitigacao</h3>
+      <div class="callout-warning callout">
+        <ul style="margin:0; padding-left:20px;">
+          <li><strong>Lancamento soft</strong> para um grupo pequeno para validacao antes do marketing completo</li>
+          <li><strong>Ciclo de feedback</strong>: cada entrevista melhora os prompts e perguntas da IA</li>
+          <li><strong>Construcao de comunidade</strong>: presenca em redes sociais de aviacao</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 8. VANTAGENS ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">8</div>
+      <h2 class="section-title">Vantagens Competitivas</h2>
+      <p class="section-subtitle">Por que o Pilossario e dificil de replicar</p>
+
+      <div class="advantage-grid">
+        <div class="advantage"><div class="advantage-number">1</div><p><strong>Primeiro no mercado</strong> em preparacao para aviacao com IA</p></div>
+        <div class="advantage"><div class="advantage-number">2</div><p><strong>Baseado em voz</strong> com conversa em tempo real</p></div>
+        <div class="advantage"><div class="advantage-number">3</div><p><strong>Especifico para aviacao</strong> com cenarios reais</p></div>
+        <div class="advantage"><div class="advantage-number">4</div><p><strong>Avaliacao ICAO</strong> reconhecida internacionalmente</p></div>
+        <div class="advantage"><div class="advantage-number">5</div><p><strong>10-20x mais barato</strong> que coaching particular</p></div>
+        <div class="advantage"><div class="advantage-number">6</div><p><strong>Escalavel</strong> sem gargalo humano</p></div>
+        <div class="advantage"><div class="advantage-number">7</div><p><strong>Orientado a dados</strong> melhoria continua</p></div>
+        <div class="advantage"><div class="advantage-number">8</div><p><strong>Multiplataforma</strong> web + iOS + Android</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 9. ROADMAP ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">9</div>
+      <h2 class="section-title">Roadmap de Crescimento</h2>
+      <p class="section-subtitle">Visao de 3 anos</p>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-icon">&#127793;</div>
+          <h4>Ano 1 — Estabelecer</h4>
+          <ul style="font-size:14px; color:var(--text-light);">
+            <li>Lancar simulador de entrevista (MVP)</li>
+            <li>1.000 usuarios no Brasil</li>
+            <li>Expandir banco de perguntas para 100+</li>
+            <li>Interface em portugues</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#127775;</div>
+          <h4>Ano 2 — Expandir</h4>
+          <ul style="font-size:14px; color:var(--text-light);">
+            <li>Avaliador de curriculo + video</li>
+            <li>Plano de assinatura mensal</li>
+            <li>Mercados da America Latina</li>
+            <li>Parcerias com escolas de aviacao</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon">&#128640;</div>
+          <h4>Ano 3 — Escalar</h4>
+          <ul style="font-size:14px; color:var(--text-light);">
+            <li>Oriente Medio e Asia</li>
+            <li>Parcerias com companhias aereas</li>
+            <li>White-label para academias</li>
+            <li>Simulacoes multilinguais</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 10. SERVICOS ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">10</div>
+      <h2 class="section-title">Servicos e Ferramentas</h2>
+      <p class="section-subtitle">Tudo que e necessario para construir e operar</p>
+
+      <h3>Servicos de IA</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Servico</th><th>Finalidade</th><th>Tipo</th><th>Custo</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Claude API (Anthropic)</strong></td><td>Conversacao + avaliacao</td><td>API paga</td><td>~R$ 0,50-1,00/entrevista</td></tr>
+            <tr><td><strong>Whisper</strong></td><td>Reconhecimento de voz</td><td>Auto-hospedado</td><td>R$ 0 (custo do servidor)</td></tr>
+            <tr><td><strong>ElevenLabs</strong></td><td>Texto para voz</td><td>API paga</td><td>~R$ 0,50-0,75/entrevista</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Infraestrutura</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Servico</th><th>Finalidade</th><th>Custo mensal</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PostgreSQL</strong> (Neon/Supabase)</td><td>Banco de dados principal</td><td>Gratuito &rarr; R$ 125/mes</td></tr>
+            <tr><td><strong>Redis</strong></td><td>Sessoes WebSocket, cache</td><td>Gratuito &rarr; R$ 50/mes</td></tr>
+            <tr><td><strong>VPS</strong> (Hetzner/Railway)</td><td>API + Web + Whisper</td><td>R$ 100-250/mes</td></tr>
+            <tr><td><strong>Cloudflare</strong></td><td>CDN, DNS, protecao DDoS</td><td>Gratuito</td></tr>
+            <tr><td><strong>Cloudflare R2 / S3</strong></td><td>Armazenamento de audio</td><td>~R$ 25/mes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Servicos de terceiros</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Servico</th><th>Finalidade</th><th>Custo</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Stripe</strong></td><td>Processamento de pagamentos</td><td>2,99% + R$ 0,39/transacao</td></tr>
+            <tr><td><strong>Sentry</strong></td><td>Monitoramento de erros</td><td>Gratuito &rarr; R$ 130/mes</td></tr>
+            <tr><td><strong>PostHog</strong></td><td>Analytics de produto</td><td>Gratuito (1M eventos/mes)</td></tr>
+            <tr><td><strong>Resend / SendGrid</strong></td><td>Emails transacionais</td><td>Gratuito &rarr; R$ 100/mes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Contas necessarias antes do desenvolvimento</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Conta</th><th>Para que</th><th>Onde criar</th></tr></thead>
+          <tbody>
+            <tr><td>Anthropic</td><td>Chave da API Claude</td><td>console.anthropic.com</td></tr>
+            <tr><td>ElevenLabs</td><td>Chave da API TTS</td><td>elevenlabs.io</td></tr>
+            <tr><td>Stripe</td><td>Pagamentos (teste + producao)</td><td>dashboard.stripe.com</td></tr>
+            <tr><td>Sentry</td><td>Rastreamento de erros</td><td>sentry.io</td></tr>
+            <tr><td>Neon ou Supabase</td><td>PostgreSQL gerenciado</td><td>neon.tech / supabase.com</td></tr>
+            <tr><td>Apple Developer</td><td>Publicacao App Store</td><td>developer.apple.com</td></tr>
+            <tr><td>Google Play</td><td>Publicacao Play Store</td><td>play.google.com/console</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 11. DETALHAMENTO DE HORAS ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">11</div>
+      <h2 class="section-title">Detalhamento de Horas</h2>
+      <p class="section-subtitle">Todas as tarefas por fase de desenvolvimento</p>
+
+      <h3>Visao geral</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Fase</th><th>Descricao</th><th>Horas</th><th>Acumulado</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>Bootstrap do Projeto</td><td>16h</td><td>16h</td></tr>
+            <tr><td>1</td><td>Autenticacao + Usuarios</td><td>20h</td><td>36h</td></tr>
+            <tr><td>2</td><td>Camada de Integracao de IA</td><td>30h</td><td>66h</td></tr>
+            <tr><td>3</td><td>Nucleo da Entrevista + WebSocket</td><td>40h</td><td>106h</td></tr>
+            <tr><td>4</td><td>Pagamentos + Creditos</td><td>16h</td><td>122h</td></tr>
+            <tr><td>5</td><td>Relatorios + Geracao de PDF</td><td>16h</td><td>138h</td></tr>
+            <tr><td>6</td><td>Frontend (Next.js)</td><td>60h</td><td>198h</td></tr>
+            <tr><td>7</td><td>Mobile (React Native)</td><td>50h</td><td>248h</td></tr>
+            <tr style="background:var(--accent-bg)"><td><strong>8</strong></td><td><strong>Polimento + Lancamento</strong></td><td><strong>32h</strong></td><td><strong>280h</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 0 — Bootstrap do Projeto (16h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Configuracao do monorepo</td><td>3h</td><td>pnpm, Turborepo, tsconfig, pipeline de build</td></tr>
+            <tr><td>Pacote de tipos compartilhados</td><td>2h</td><td>Interfaces TypeScript</td></tr>
+            <tr><td>Pacote de utilidades</td><td>1h</td><td>Schemas Zod, helpers de audio</td></tr>
+            <tr><td>Scaffolding do NestJS</td><td>2h</td><td>Estrutura, modulos, configuracao</td></tr>
+            <tr><td>Schema Prisma + migracao</td><td>3h</td><td>10 entidades, enums, indices</td></tr>
+            <tr><td>Docker Compose</td><td>2h</td><td>PostgreSQL, Redis, Whisper</td></tr>
+            <tr><td>Banco de perguntas</td><td>2h</td><td>30+ perguntas, 5+ anuncios</td></tr>
+            <tr><td>Configuracao de ambiente</td><td>1h</td><td>Variaveis documentadas</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 1 — Autenticacao + Usuarios (20h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Modulo de autenticacao</td><td>5h</td><td>Registro, login, bcrypt, validacao</td></tr>
+            <tr><td>Estrategia JWT</td><td>4h</td><td>Access + refresh tokens, rotacao</td></tr>
+            <tr><td>Logout + invalidacao</td><td>2h</td><td>Deletar refresh token</td></tr>
+            <tr><td>Auth WebSocket</td><td>3h</td><td>Validar JWT no handshake</td></tr>
+            <tr><td>CRUD de perfil</td><td>2h</td><td>GET / PATCH /users/me</td></tr>
+            <tr><td>Testes de integracao</td><td>4h</td><td>Fluxo completo de autenticacao</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 2 — Integracao de IA (30h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Servico Claude</td><td>6h</td><td>SDK Anthropic, historico de conversa</td></tr>
+            <tr><td>Prompt do entrevistador</td><td>8h</td><td>5 partes, persona, transicoes</td></tr>
+            <tr><td>Prompt de avaliacao</td><td>6h</td><td>Rubrica ICAO, JSON, Zod</td></tr>
+            <tr><td>Servico Whisper</td><td>3h</td><td>Cliente HTTP, WAV, timeout</td></tr>
+            <tr><td>Servico TTS</td><td>3h</td><td>ElevenLabs, selecao de voz</td></tr>
+            <tr><td>CLI de teste</td><td>4h</td><td>Validar fluxo sem audio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 3 — Nucleo da Entrevista + WebSocket (40h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Gateway WebSocket</td><td>8h</td><td>Conexao, eventos, autenticacao</td></tr>
+            <tr><td>Maquina de estados</td><td>10h</td><td>Transicoes, timeout, recuperacao</td></tr>
+            <tr><td>Banco de perguntas</td><td>4h</td><td>Selecao aleatoria, deduplicacao</td></tr>
+            <tr><td>Pipeline de audio</td><td>8h</td><td>Buffer, WAV, Whisper&rarr;Claude&rarr;TTS</td></tr>
+            <tr><td>Guard de creditos</td><td>3h</td><td>Verificacao e deducao transacional</td></tr>
+            <tr><td>Desconexao/reconexao</td><td>4h</td><td>Recuperacao de sessao</td></tr>
+            <tr><td>Persistencia</td><td>3h</td><td>Salvar mensagens no banco</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 4 — Pagamentos + Creditos (16h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Stripe Checkout</td><td>4h</td><td>Sessao, redirecionamentos, pacotes</td></tr>
+            <tr><td>Handler de webhook</td><td>4h</td><td>Assinatura, eventos, body raw</td></tr>
+            <tr><td>Servico de creditos</td><td>4h</td><td>Transacional, saldo, historico</td></tr>
+            <tr><td>Testes E2E</td><td>4h</td><td>Fluxo compra&rarr;credito&rarr;entrevista</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 5 — Relatorios + PDF (16h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Montagem de dados</td><td>4h</td><td>Avaliacao, mensagens, metadados</td></tr>
+            <tr><td>Template PDF</td><td>6h</td><td>Grafico radar, notas, recomendacoes</td></tr>
+            <tr><td>Geracao de PDF</td><td>4h</td><td>Renderizacao server-side</td></tr>
+            <tr><td>Endpoint de download</td><td>2h</td><td>GET /reports/:id/pdf</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 6 — Frontend Next.js (60h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Scaffolding</td><td>3h</td><td>Next.js, Tailwind, shadcn/ui, Zustand</td></tr>
+            <tr><td>Paginas de autenticacao</td><td>6h</td><td>Login, registro, validacao</td></tr>
+            <tr><td>Dashboard</td><td>5h</td><td>Sidebar, creditos, sessoes recentes</td></tr>
+            <tr><td>Pagina de creditos</td><td>5h</td><td>Pacotes, Stripe, historico</td></tr>
+            <tr><td>Pre-entrevista</td><td>6h</td><td>Instrucoes, permissao do mic</td></tr>
+            <tr><td><strong>Entrevista ao vivo</strong></td><td><strong>18h</strong></td><td>Audio, WS, transcricao, TTS, timer</td></tr>
+            <tr><td>Relatorio</td><td>8h</td><td>Grafico radar, notas, download PDF</td></tr>
+            <tr><td>Historico</td><td>4h</td><td>Lista de sessoes, badges</td></tr>
+            <tr><td>Design responsivo</td><td>5h</td><td>Mobile-friendly</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 7 — Mobile React Native (50h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Scaffolding Expo</td><td>3h</td><td>TypeScript, navegacao, tipos</td></tr>
+            <tr><td>Telas de autenticacao</td><td>5h</td><td>Login, registro, expo-secure-store</td></tr>
+            <tr><td>Dashboard</td><td>4h</td><td>Creditos, inicio rapido</td></tr>
+            <tr><td>Pre-entrevista</td><td>5h</td><td>Teste de mic com expo-av</td></tr>
+            <tr><td><strong>Entrevista ao vivo</strong></td><td><strong>16h</strong></td><td>expo-av, WS, push-to-talk, TTS</td></tr>
+            <tr><td>Relatorio</td><td>6h</td><td>react-native-svg, notas</td></tr>
+            <tr><td>Historico + perfil</td><td>4h</td><td>Sessoes, configuracoes</td></tr>
+            <tr><td>Pagamentos Stripe</td><td>4h</td><td>@stripe/stripe-react-native</td></tr>
+            <tr><td>Build + testes</td><td>3h</td><td>TestFlight + Play Store</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Fase 8 — Polimento + Lancamento (32h)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tarefa</th><th>Horas</th><th>Detalhes</th></tr></thead>
+          <tbody>
+            <tr><td>Sentry</td><td>4h</td><td>Erros na API, web e mobile</td></tr>
+            <tr><td>PostHog analytics</td><td>4h</td><td>Cadastro, compra, entrevista</td></tr>
+            <tr><td>Rate limiting</td><td>3h</td><td>Protecao de endpoints</td></tr>
+            <tr><td>Landing page</td><td>6h</td><td>Marketing, precos, CTA</td></tr>
+            <tr><td>Paginas legais</td><td>4h</td><td>Termos, privacidade, LGPD</td></tr>
+            <tr><td>Deploy em producao</td><td>6h</td><td>Servidor, dominio, SSL, CI/CD</td></tr>
+            <tr><td>Expansao de perguntas</td><td>3h</td><td>50+ perguntas</td></tr>
+            <tr><td>Teste de carga</td><td>2h</td><td>Pipeline de audio simultaneo</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 12. DECISAO ═══════════ -->
+  <section>
+    <div class="container">
+      <div class="section-number">12</div>
+      <h2 class="section-title">Resumo para Decisao</h2>
+      <p class="section-subtitle">Todos os fatores para analise e aprovacao</p>
+
+      <div class="decision-box">
+        <h3>Por que aprovar este projeto</h3>
+        <div class="decision-grid">
+          <div class="decision-item">
+            <div class="label">Necessidade de mercado</div>
+            <div class="value">Forte</div>
+            <div class="badge">Sem concorrente direto</div>
+          </div>
+          <div class="decision-item">
+            <div class="label">Potencial de receita</div>
+            <div class="value">Alto</div>
+            <div class="badge">Margem 85-90%</div>
+          </div>
+          <div class="decision-item">
+            <div class="label">Investimento</div>
+            <div class="value">Moderado</div>
+            <div class="badge">280h + R$ 665</div>
+          </div>
+          <div class="decision-item">
+            <div class="label">Tempo ate o mercado</div>
+            <div class="value">Rapido</div>
+            <div class="badge">11 semanas</div>
+          </div>
+          <div class="decision-item">
+            <div class="label">Viabilidade tecnica</div>
+            <div class="value">Comprovada</div>
+            <div class="badge">Servicos maduros</div>
+          </div>
+          <div class="decision-item">
+            <div class="label">Escalabilidade</div>
+            <div class="value">Excelente</div>
+            <div class="badge">Sem gargalo humano</div>
+          </div>
+          <div class="decision-item">
+            <div class="label">Nivel de risco</div>
+            <div class="value">Baixo-Medio</div>
+            <div class="badge">Soft launch</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>O que e necessario para comecar</h3>
+      <div class="callout">
+        <ol style="margin:0; padding-left:20px;">
+          <li style="margin-bottom:8px"><strong>Aprovacao das horas de desenvolvimento</strong> (~280h)</li>
+          <li style="margin-bottom:8px"><strong>Criacao de contas nas APIs</strong> (Anthropic, ElevenLabs, Stripe)</li>
+          <li><strong>Orcamento inicial de infraestrutura</strong> (~R$ 665 unica vez + ~R$ 300/mes)</li>
+        </ol>
+      </div>
+
+      <h3>Retorno esperado</h3>
+      <div class="gauge-row">
+        <div class="gauge">
+          <div class="gauge-label">Ponto de equilibrio</div>
+          <div class="gauge-value">50</div>
+          <div class="gauge-sub">entrevistas/mes</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Lucrativo em escala</div>
+          <div class="gauge-value">R$ 14k</div>
+          <div class="gauge-sub">lucro/mes (500 entrevistas)</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Longo prazo</div>
+          <div class="gauge-value">R$ 57k</div>
+          <div class="gauge-sub">lucro/mes (2.000 entrevistas)</div>
+        </div>
+      </div>
+
+      <div class="highlight" style="text-align:center; font-size:18px; margin-top:40px;">
+        A plataforma se torna a ferramenta referencia para preparacao de carreira em aviacao globalmente.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer>
+    <p>Preparado pela Equipe de Desenvolvimento CodeBethel &mdash; Marco 2026</p>
+  </footer>
+
+  </div><!-- end #presentation-content -->
+
+  <script>
+    // SHA-256 hash of the password (password is NOT stored in plaintext)
+    const HASH = '9fd713eddfc266984618e64637f8fa33885c5cdf19a8b5e4079f50196c57570e';
+
+    async function sha256(text) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function authenticate() {
+      const input = document.getElementById('password-input');
+      const error = document.getElementById('auth-error');
+      const gate = document.getElementById('auth-gate');
+      const content = document.getElementById('presentation-content');
+
+      const hash = await sha256(input.value);
+
+      if (hash === HASH) {
+        gate.classList.add('hidden');
+        content.style.display = 'block';
+        sessionStorage.setItem('pilossario-auth', 'true');
+        setTimeout(() => gate.remove(), 600);
+      } else {
+        input.classList.add('error');
+        error.textContent = 'Senha incorreta. Tente novamente.';
+        setTimeout(() => input.classList.remove('error'), 400);
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    // Check if already authenticated in this session
+    if (sessionStorage.getItem('pilossario-auth') === 'true') {
+      document.getElementById('auth-gate').remove();
+      document.getElementById('presentation-content').style.display = 'block';
+    }
+
+    document.getElementById('auth-submit')?.addEventListener('click', authenticate);
+    document.getElementById('password-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') authenticate();
+    });
+  </script>
+
+</body>
+</html>
